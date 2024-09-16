@@ -3,6 +3,12 @@ FROM python:3.10-bullseye AS spark-base
 ARG SPARK_MAJOR_VERSION=3.5
 ARG SPARK_VERSION=3.5.2
 ARG ICEBERG_VERSION=1.6.1
+ARG HIVE_VERSION=4.0.0
+ARG POSTGRES_JDBC_VERSION=42.6.0
+
+ARG SCALAR_VERSION=2.12.20
+ARG CLICKHOUSE_JDBC_VERSION=0.6.5
+ARG CLICKHOUSE_RUNTIME_VERSION=0.8.0
 
 # Install tools required by the OS
 RUN apt-get update && \
@@ -35,13 +41,22 @@ RUN curl https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VER
 # Download iceberg spark runtime
 RUN curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12/${ICEBERG_VERSION}/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12-${ICEBERG_VERSION}.jar -Lo /opt/spark/jars/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12-${ICEBERG_VERSION}.jar
 
+# Download clickhouse spark runtime
+RUN curl https://repo1.maven.org/maven2/com/clickhouse/spark/clickhouse-spark-runtime-3.5_2.12/0.8.0/clickhouse-spark-runtime-3.5_2.12-0.8.0.jar -Lo /opt/spark/jars/clickhouse-spark-runtime-3.5_2.12-0.8.0.jar
+# Download clickhouse client
+RUN curl https://repo1.maven.org/maven2/com/clickhouse/clickhouse-client/0.6.5/clickhouse-client-0.6.5.jar -Lo  /opt/spark/jars/clickhouse-client-0.6.5.jar
+
+# Download scalar
+RUN curl https://repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.20/scala-library-2.12.20.jar -Lo  /opt/spark/jars/scala-library-2.12.20.jar
+
 # Download hive metastore
-RUN curl https://repo1.maven.org/maven2/org/apache/hive/hive-metastore/4.0.0/hive-metastore-4.0.0.jar -Lo /opt/spark/jars/hive-metastore-4.0.0.jar
+RUN curl https://repo1.maven.org/maven2/org/apache/hive/hive-metastore/${HIVE_VERSION}/hive-metastore-${HIVE_VERSION}.jar -Lo /opt/spark/jars/hive-metastore-${HIVE_VERSION}.jar
 
 # Download Postgres JDBC driver
-RUN curl https://jdbc.postgresql.org/download/postgresql-42.6.0.jar -o postgresql-42.6.0.jar \
-    && mv postgresql-42.6.0.jar /opt/spark/jars/postgresql-42.6.0.jar
+RUN curl https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar -Lo /opt/spark/jars/postgresql-${POSTGRES_JDBC_VERSION}.jar
 
+# Download ClickHouse JDBC driver
+RUN curl https://github.com/ClickHouse/clickhouse-java/releases/download/v${CLICKHOUSE_JDBC_VERSION}/clickhouse-jdbc-${CLICKHOUSE_JDBC_VERSION}-all.jar -Lo /opt/spark/jars/clickhouse-jdbc-${CLICKHOUSE_JDBC_VERSION}-all.jar
 
 FROM spark-base AS pyspark
 
