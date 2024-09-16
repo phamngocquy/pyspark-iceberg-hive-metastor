@@ -62,10 +62,6 @@ services:
       - spark-logs:/opt/spark/spark-events
     ports:
       - '15002:15002'
-    environment:
-      CLICKHOUSE_DB: default
-      CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWED: default
   clickhouse-db:
     container_name: clickhouse-db
     image: clickhouse/clickhouse-server:24.8.4
