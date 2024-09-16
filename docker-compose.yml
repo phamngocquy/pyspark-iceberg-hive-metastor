@@ -1,0 +1,112 @@
+services:
+  spark-master:
+    container_name: da-spark-master
+    build: .
+    image: da-spark-image
+    entrypoint: ['./entrypoint.sh', 'master']
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - "${DATA_DIR}/warehouse:/warehouse"
+      - "${DATA_DIR}/spark_data:/opt/spark/data"
+      - "${DATA_DIR}/spark_apps:/opt/spark/apps"
+      - spark-logs:/opt/spark/spark-events
+    env_file:
+      - .env.spark
+    ports:
+      - '9090:8080'
+      - '7077:7077'
+      - '8889:8889'
+  spark-history-server:
+    container_name: da-spark-history
+    image: da-spark-image
+    entrypoint: ['./entrypoint.sh', 'history']
+    depends_on:
+      - spark-master
+    env_file:
+      - .env.spark
+    volumes:
+      - spark-logs:/opt/spark/spark-events
+    ports:
+      - '18080:18080'
+  spark-worker:
+    container_name: da-spark-worker
+    image: da-spark-image
+    entrypoint: ['./entrypoint.sh', 'worker']
+    depends_on:
+      - spark-master
+    env_file:
+      - .env.spark
+    volumes:
+      - "${DATA_DIR}/warehouse:/warehouse"
+      - "${DATA_DIR}/spark_data:/opt/spark/data"
+      - "${DATA_DIR}/spark_apps:/opt/spark/apps"
+      - spark-logs:/opt/spark/spark-events
+  spark-connect:
+    container_name: da-spark-connect
+    image: da-spark-image
+    entrypoint: ['./entrypoint.sh', 'connect']
+    depends_on:
+      - spark-master
+    env_file:
+      - .env.spark
+    volumes:
+      - "${DATA_DIR}/warehouse:/warehouse"
+      - "${DATA_DIR}/spark_data:/opt/spark/data"
+      - "${DATA_DIR}/spark_apps:/opt/spark/apps"
+      - spark-logs:/opt/spark/spark-events
+    ports:
+      - '15002:15002'
+  postgres-db:
+    container_name: da-postgres-db
+    image: postgres:14.1
+    depends_on:
+      - spark-master
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: metastore_db
+    volumes:
+      - "${DATA_DIR}/pgdata:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+    ports:
+      - '5432:5432'
+  hive-mds:
+    container_name: da-spark-hive
+    image: apache/hive:4.0.0
+    volumes:
+      - "${DATA_DIR}/warehouse:/warehouse"
+      - ./libs/postgresql-42.6.0.jar:/opt/hive/lib/postgresql-42.6.0.jar
+      - ./conf/hive-site.xml:/opt/hive/conf/hive-site.xml
+    depends_on:
+      - spark-master
+      - postgres-db
+    environment:
+      - SERVICE_NAME=metastore
+      - DB_DRIVER=postgres
+    ports:
+      - '9083:9083'
+  dremio:
+    platform: linux/x86_64
+    image: dremio/dremio-oss:latest
+    ports:
+      - 9047:9047
+      - 31010:31010
+      - 32010:32010
+    container_name: dremio
+    volumes:
+      - "${DATA_DIR}/warehouse:/warehouse"
+  superset:
+    image: alexmerced/dremio-superset
+    container_name: superset
+    ports:
+      - 8088:8088
+volumes:
+  spark-logs:
+  pgdata:
