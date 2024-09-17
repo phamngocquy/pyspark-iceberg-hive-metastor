@@ -3,12 +3,18 @@ FROM python:3.10-bullseye AS spark-base
 ARG SPARK_MAJOR_VERSION=3.5
 ARG SPARK_VERSION=3.5.2
 ARG ICEBERG_VERSION=1.6.1
+
 ARG HIVE_VERSION=4.0.0
 ARG POSTGRES_JDBC_VERSION=42.6.0
 
 ARG SCALAR_VERSION=2.12.20
+ARG SCALAR_MAJOR_VERSION=2.12
+
 ARG CLICKHOUSE_JDBC_VERSION=0.6.3
-ARG CLICKHOUSE_RUNTIME_VERSION=0.8.0
+ARG CLICKHOUSE_SPARK_VERSION=0.8.0
+ARG CLICKHOUSE_CLIENT_VERSION=0.6.5
+
+
 
 # Install tools required by the OS
 RUN apt-get update && \
@@ -39,15 +45,15 @@ RUN curl https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VER
  && rm -rf spark-${SPARK_VERSION}-bin-hadoop3.tgz
 
 # Download iceberg spark runtime
-RUN curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12/${ICEBERG_VERSION}/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12-${ICEBERG_VERSION}.jar -Lo /opt/spark/jars/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_2.12-${ICEBERG_VERSION}.jar
+RUN curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_${SCALAR_MAJOR_VERSION}/${ICEBERG_VERSION}/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_${SCALAR_MAJOR_VERSION}-${ICEBERG_VERSION}.jar -Lo /opt/spark/jars/iceberg-spark-runtime-${SPARK_MAJOR_VERSION}_${SCALAR_MAJOR_VERSION}-${ICEBERG_VERSION}.jar
 
 # Download clickhouse spark runtime
-RUN curl https://repo1.maven.org/maven2/com/clickhouse/spark/clickhouse-spark-runtime-3.5_2.12/0.8.0/clickhouse-spark-runtime-3.5_2.12-0.8.0.jar -Lo /opt/spark/jars/clickhouse-spark-runtime-3.5_2.12-0.8.0.jar
+RUN curl https://repo1.maven.org/maven2/com/clickhouse/spark/clickhouse-spark-runtime-${SPARK_MAJOR_VERSION}_${SCALAR_MAJOR_VERSION}/${CLICKHOUSE_SPARK_VERSION}/clickhouse-spark-runtime-${SPARK_MAJOR_VERSION}_${SCALAR_MAJOR_VERSION}-${CLICKHOUSE_SPARK_VERSION}.jar -Lo /opt/spark/jars/clickhouse-spark-runtime-${SPARK_MAJOR_VERSION}_${SCALAR_MAJOR_VERSION}-${CLICKHOUSE_SPARK_VERSION}.jar
 # Download clickhouse client
-RUN curl https://repo1.maven.org/maven2/com/clickhouse/clickhouse-client/0.6.5/clickhouse-client-0.6.5.jar -Lo  /opt/spark/jars/clickhouse-client-0.6.5.jar
+RUN curl https://repo1.maven.org/maven2/com/clickhouse/clickhouse-client/${CLICKHOUSE_CLIENT_VERSION}/clickhouse-client-${CLICKHOUSE_CLIENT_VERSION}.jar -Lo  /opt/spark/jars/clickhouse-client-${CLICKHOUSE_CLIENT_VERSION}.jar
 
 # Download scalar
-RUN curl https://repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.20/scala-library-2.12.20.jar -Lo  /opt/spark/jars/scala-library-2.12.20.jar
+RUN curl https://repo1.maven.org/maven2/org/scala-lang/scala-library/${SCALAR_VERSION}/scala-library-${SCALAR_VERSION}.jar -Lo  /opt/spark/jars/scala-library-${SCALAR_VERSION}.jar
 
 # Download hive metastore
 RUN curl https://repo1.maven.org/maven2/org/apache/hive/hive-metastore/${HIVE_VERSION}/hive-metastore-${HIVE_VERSION}.jar -Lo /opt/spark/jars/hive-metastore-${HIVE_VERSION}.jar
